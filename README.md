@@ -2,16 +2,18 @@
 
 [![CircleCI](https://circleci.com/gh/hypriot/flash.svg?style=svg)](https://circleci.com/gh/hypriot/flash)
 [![Build Status](https://travis-ci.org/hypriot/flash.svg?branch=master)](https://travis-ci.org/hypriot/flash)
+[![Release](https://img.shields.io/github/release/hypriot/flash.svg)](https://github.com/hypriot/flash/releases)
+[![Stars](	https://img.shields.io/github/stars/hypriot/flash.svg?style=social&label=Stars)](https://github.com/hypriot/flash#installation)
 
 Command line script to flash SD card images of any kind.
 
-Note that for some devices (e.g. Raspberry Pi), at the end of the flashing process the tool tries to customize the SD card e.g. it configures a hostname. If this customization is not supported, just ignore the error thrown at this point.
+Note that for some devices (e.g. Raspberry Pi), at the end of the flashing process the tool tries to customize the SD card e.g. it configures a hostname or WiFi. And with a cloud-init enabled image you can do much more like adding users, SSH keys etc.
 
 The typical workflow looks like this:
 
 [![asciicast](https://asciinema.org/a/4k72pounxxybtix84ecl4b69w.png)](https://asciinema.org/a/4k72pounxxybtix84ecl4b69w)
 
-1. Run `flash https://github.com/hypriot/image-builder-rpi/releases/download/v1.7.1/hypriotos-rpi-v1.7.1.img.zip`
+1. Run `flash https://github.com/hypriot/image-builder-rpi/releases/download/v1.11.5/hypriotos-rpi-v1.11.5.img.zip`
 2. Insert SD card to your notebook
 3. Press RETURN
 4. Eject SD card and insert it to your Raspberry Pi - done!
@@ -26,6 +28,7 @@ This script can
 * copy an optional cloud-init `user-data` and `meta-data` file into the boot partition of the SD image
 * copy an optional `config.txt` file into the boot partition of the SD image (eg. to enable onboard WiFi)
 * copy an optional `device-init.yaml` or `occidentalis.txt` file into the boot partition of the SD image (for older HypriotOS versions)
+* copy an optional custom file into the boot partition of the SD image
 * optional set the hostname of this SD image
 * optional set the WiFi settings as well
 * play a little sound after flashing
@@ -38,7 +41,7 @@ At the moment only Mac OS X and Linux is supported.
 Download the appropriate version for Linux or Mac with this command
 
 ```bash
-curl -O https://raw.githubusercontent.com/hypriot/flash/master/$(uname -s)/flash
+curl -LO https://github.com/hypriot/flash/releases/download/2.4.0/flash
 chmod +x flash
 sudo mv flash /usr/local/bin/flash
 ```
@@ -87,7 +90,9 @@ OPTIONS:
    --force|-f     Force flash without security prompt (for automation)
    --userdata|-u  Copy this cloud-init config file to /boot/user-data
    --metadata|-m  Copy this cloud-init config file to /boot/meta-data
+   --file|-F      Copy this custom file to /boot
 ```
+
 If no image is specified, the script will try to configure an existing
 image. This is useful to try several configuration without the need to
 rewrite the image every time.
@@ -132,7 +137,7 @@ The option `--bootconf` can be used to copy a `config.txt` into the SD image
 before it is unplugged.
 
 With this option it is possible to change some memory, camera, video settings
-etc. See the [config.txt documentation](https://www.raspberrypi.org/documentation/configuration/config-txt.md)
+etc. See the [config.txt documentation](https://www.raspberrypi.org/documentation/configuration/config-txt/README.md)
 at raspberrypi.org for more details.
 
 The boot config file config.txt has name/value pairs such as:
@@ -166,7 +171,7 @@ If you don't want to set any wifi settings, comment out or remove the wlan0, ssi
 ### Flash a compressed SD image from the internet
 
 ```bash
-flash https://github.com/hypriot/image-builder-rpi/releases/download/v1.7.1/hypriotos-rpi-v1.7.1.img.zip
+flash https://github.com/hypriot/image-builder-rpi/releases/download/v1.11.5/hypriotos-rpi-v1.11.5.img.zip
 ```
 
 ### Flash and change the hostname
@@ -189,7 +194,7 @@ ssh pi@mypi.local
 The options `--userdata` and `--bootconf` must be used to disable UART and enable onboard WiFi for Raspberry Pi 3 and Pi 0. For external WiFi sticks you do not need to specify the `-bootconf` option.
 
 ```
-flash --userdata sample/wlan-user-data.yaml --bootconf sample/no-uart-config.txt hypriotos-rpi-v1.7.1.img
+flash --userdata sample/wlan-user-data.yaml --bootconf sample/no-uart-config.txt hypriotos-rpi-v1.11.5.img
 ```
 
 ### Automating flash
@@ -197,7 +202,7 @@ flash --userdata sample/wlan-user-data.yaml --bootconf sample/no-uart-config.txt
 For non-interactive usage, you can predefine the user input in the flash command with the `-d` and `-f` options:
 
 ```
-flash -d /dev/mmcblk0 -f hypriotos-rpi-v1.7.1.img
+flash -d /dev/mmcblk0 -f hypriotos-rpi-v1.11.5.img
 ```
 
 ## Development
@@ -211,7 +216,7 @@ To develop the flash scripts you need either a Linux or macOS machine to test lo
 
 The flash script are checked with the [`shellcheck`](https://www.shellcheck.net) static analysis tool.
 
-The integration tests can be run locally on macOS or Linux. We use BATS which is installed with NPM package. So you would need Node.js to setup a local development environment. As the flash script runs `dd` and some commands with `sudo` it is recommended to use the isolated test environment with Docker or run this local tests in a macOS / Linux VM. 
+The integration tests can be run locally on macOS or Linux. We use BATS which is installed with NPM package. So you would need Node.js to setup a local development environment. As the flash script runs `dd` and some commands with `sudo` it is recommended to use the isolated test environment with Docker or run this local tests in a macOS / Linux VM.
 
 ```
 npm install
@@ -256,5 +261,12 @@ the `Vagrantfile`.
 vagrant up --provider virtualbox
 vagrant ssh
 cd /vagrant
-./Linux/flash hypriotos-rpi-v1.7.1.img.zip
+./flash hypriotos-rpi-v1.7.1.img.zip
 ```
+
+## Buy us a beer!
+
+This FLOSS software is funded by donations only. Please support us to maintain and further improve it!
+
+<a href="https://liberapay.com/Hypriot/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a>
+

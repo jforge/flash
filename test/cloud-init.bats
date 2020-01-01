@@ -1,4 +1,5 @@
 load test_helper
+export OS=$(uname -s)
 
 setup() {
   if [ ! -f cloud-init.img ]; then
@@ -17,8 +18,17 @@ teardown() {
   unstub_diskutil
 }
 
+@test "cloud-init: flash aborts if YAML is not valid" {
+  if [ "${OS}" == "Darwin" ]; then
+    run ./flash -f -d $img -u test/resources/bad.yml cloud-init.img
+    assert_failure
+
+    assert_output_contains "is not a valid YAML file"
+  fi
+}
+
 @test "cloud-init: flash works" {
-  run ./$OS/flash -f -d $img cloud-init.img
+  run ./flash -f -d $img cloud-init.img
   assert_success
 
   assert_output_contains Finished.
@@ -29,12 +39,14 @@ teardown() {
   assert_output_contains "name: pirate"
   assert_output_contains "plain_text_passwd: hypriot"
 
-  [[ -e "/tmp/boot/meta-data" ]]
-  [[ ! -s "/tmp/boot/meta-data" ]]
+  assert [ ! -e "/tmp/boot/user-data-e" ]
+
+  assert [ -e "/tmp/boot/meta-data" ]
+  assert [ ! -s "/tmp/boot/meta-data" ]
 }
 
 @test "cloud-init: flash --hostname sets hostname" {
-  run ./$OS/flash -f -d $img --hostname myhost cloud-init.img
+  run ./flash -f -d $img --hostname myhost cloud-init.img
   assert_success
   assert_output_contains Finished.
 
@@ -44,12 +56,14 @@ teardown() {
   assert_output_contains "name: pirate"
   assert_output_contains "plain_text_passwd: hypriot"
 
-  [[ -e "/tmp/boot/meta-data" ]]
-  [[ ! -s "/tmp/boot/meta-data" ]]
+  assert [ ! -e /tmp/boot/user-data-e ]
+
+  assert [ -e /tmp/boot/meta-data ]
+  assert [ ! -s /tmp/boot/meta-data ]
 }
 
 @test "cloud-init: flash --config does not replace user-data" {
-  run ./$OS/flash -f -d $img --config test/resources/good.yml cloud-init.img
+  run ./flash -f -d $img --config test/resources/good.yml cloud-init.img
   assert_success
   assert_output_contains Finished.
 
@@ -59,12 +73,12 @@ teardown() {
   assert_output_contains "name: pirate"
   assert_output_contains "plain_text_passwd: hypriot"
 
-  [[ -e "/tmp/boot/meta-data" ]]
-  [[ ! -s "/tmp/boot/meta-data" ]]
+  assert [ -e "/tmp/boot/meta-data" ]
+  assert [ ! -s "/tmp/boot/meta-data" ]
 }
 
 @test "cloud-init: flash --userdata replaces user-data" {
-  run ./$OS/flash -f -d $img --userdata test/resources/good.yml cloud-init.img
+  run ./flash -f -d $img --userdata test/resources/good.yml cloud-init.img
   assert_success
   assert_output_contains Finished.
 
@@ -74,12 +88,12 @@ teardown() {
   assert_output_contains "name: other"
   assert_output_contains "ssh-authorized-keys:"
 
-  [[ -e "/tmp/boot/meta-data" ]]
-  [[ ! -s "/tmp/boot/meta-data" ]]
+  assert [ -e "/tmp/boot/meta-data" ]
+  assert [ ! -s "/tmp/boot/meta-data" ]
 }
 
 @test "cloud-init: flash --metadata replaces meta-data" {
-  run ./$OS/flash -f -d $img --userdata test/resources/good.yml --metadata test/resources/meta.yml cloud-init.img
+  run ./flash -f -d $img --userdata test/resources/good.yml --metadata test/resources/meta.yml cloud-init.img
   assert_success
   assert_output_contains Finished.
 
@@ -94,7 +108,7 @@ teardown() {
 }
 
 @test "cloud-init: flash --bootconf replaces config.txt" {
-  run ./$OS/flash -f -d $img --bootconf test/resources/no-uart.txt cloud-init.img
+  run ./flash -f -d $img --bootconf test/resources/no-uart.txt cloud-init.img
   assert_success
   assert_output_contains Finished.
 
@@ -104,8 +118,8 @@ teardown() {
   assert_output_contains "name: pirate"
   assert_output_contains "plain_text_passwd: hypriot"
 
-  [[ -e "/tmp/boot/meta-data" ]]
-  [[ ! -s "/tmp/boot/meta-data" ]]
+  assert [ -e "/tmp/boot/meta-data" ]
+  assert [ ! -s "/tmp/boot/meta-data" ]
 
   run cat /tmp/boot/config.txt
   assert_output_contains "enable_uart=0"
